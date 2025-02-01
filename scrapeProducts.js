@@ -67,7 +67,7 @@ export async function scrapeProducts() {
             await page.goto(absoluteLink, { waitUntil: "domcontentloaded", timeout: 60000 });
 
             const { extractProducts } = await import(`./stores/${store}/scraper.js`);
-            const products = await extractProducts(page, category);
+            const products = await extractProducts(page, config.baseUrl);
 
             allProducts[category] = products;
         }
