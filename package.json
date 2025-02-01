@@ -1,0 +1,31 @@
+{
+  "name": "food-prices-scraper",
+  "version": "1.0.0",
+  "description": "App for scraping food prices from e-stores",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/juris-daksa/food-prices-scraper.git"
+  },
+  "keywords": [
+    "scraper",
+    "food",
+    "store"
+  ],
+  "author": "Juris Daksa",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/juris-daksa/food-prices-scraper/issues"
+  },
+  "homepage": "https://github.com/juris-daksa/food-prices-scraper#readme",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "inquirer": "^12.3.3",
+    "puppeteer-core": "^24.1.1"
+  }
+}
