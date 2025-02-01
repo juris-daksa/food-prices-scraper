@@ -47,6 +47,20 @@ async function selectStore(storeConfigs) {
     return response.store;
 }
 
+async function retryCategoryPrompt(category, error) {
+    console.error(`Error while extracting products from category "${category}": ${error.message}`);
+    const response = await inquirer.prompt([
+        {
+            type: 'confirm',
+            message: `Failed to extract products from category "${category}". Would you like to try again?`,
+            name: 'retry',
+            default: true
+        }
+    ]);
+
+    return response.retry;
+}
+
 export async function scrapeProducts() {
     let browser;
     let page;
@@ -63,28 +77,47 @@ export async function scrapeProducts() {
 
         for (const { href, category } of selectedCategories) {
             const absoluteLink = new URL(href, config.baseUrl).href;
-            ({ browser, page } = await resetSession(brdConfig));
-            await page.goto(absoluteLink, { waitUntil: "domcontentloaded", timeout: 60000 });
 
-            const { extractProducts } = await import(`./stores/${store}/scraper.js`);
-            const products = await extractProducts(page, config.baseUrl);
+            while (true) {
+                ({ browser, page } = await resetSession(brdConfig));
 
-            allProducts[category] = products;
+                try {
+                    await page.goto(absoluteLink, { waitUntil: "domcontentloaded", timeout: 60000 });
+                    const { extractProducts } = await import(`./stores/${store}/scraper.js`);
+                    const products = await extractProducts(page, config.baseUrl);
+                    allProducts[category] = products;
+                    break;
+                } catch (error) {
+                    const retry = await retryCategoryPrompt(category, error);
+                    if (!retry) {
+                        break;
+                    }
+                } finally {
+                    await browser?.close();
+                }
+            }
+
+            // Save intermediate results
+            const dateTime = new Date();
+            const output = {
+                dateTime,
+                categories: allProducts
+            };
+            const fileName = `${store}-products-partial-${dateTime.toISOString().split('T')[0]}.json`;
+            fs.writeFileSync(fileName, JSON.stringify(output, null, 2));
         }
 
+        // Final save
         const dateTime = new Date();
         const output = {
             dateTime,
             categories: allProducts
         };
-
         const fileName = `${store}-products-${dateTime.toISOString().split('T')[0]}.json`;
         fs.writeFileSync(fileName, JSON.stringify(output, null, 2));
 
         return allProducts;
     } catch (error) {
         console.error('Export failed:', error);
-    } finally {
-        await browser?.close();
     }
 }
