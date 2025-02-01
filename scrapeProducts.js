@@ -74,18 +74,36 @@ export async function scrapeProducts() {
 
         const selectedCategories = config.categories;
         let allProducts = {};
+        let currentCategory = null;
+        let currentPage = 1;
 
         for (const { href, category } of selectedCategories) {
-            const absoluteLink = new URL(href, config.baseUrl).href;
+            currentCategory = category;
+            const baseUrl = config.baseUrl;
+            const absoluteLink = new URL(href, baseUrl).href;
 
             while (true) {
                 ({ browser, page } = await resetSession(brdConfig));
 
                 try {
-                    await page.goto(absoluteLink, { waitUntil: "domcontentloaded", timeout: 60000 });
+                    await page.goto(`${absoluteLink}?page=${currentPage}`, { waitUntil: "domcontentloaded", timeout: 60000 });
                     const { extractProducts } = await import(`./stores/${store}/scraper.js`);
-                    const products = await extractProducts(page, config.baseUrl);
+                    const products = await extractProducts(page, baseUrl);
                     allProducts[category] = products;
+
+                    // Save intermediate results with store name and progress information
+                    const dateTime = new Date();
+                    const output = {
+                        dateTime,
+                        storeName: store,
+                        categories: allProducts,
+                        currentCategory,
+                        currentPage
+                    };
+                    const fileName = `${store}-products-partial-${dateTime.toISOString().split('T')[0]}.json`;
+                    const outputPath = resolve(__dirname, 'output', fileName);
+                    fs.mkdirSync(resolve(__dirname, 'output'), { recursive: true });
+                    fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
                     break;
                 } catch (error) {
                     const retry = await retryCategoryPrompt(category, error);
@@ -97,24 +115,20 @@ export async function scrapeProducts() {
                 }
             }
 
-            // Save intermediate results
-            const dateTime = new Date();
-            const output = {
-                dateTime,
-                categories: allProducts
-            };
-            const fileName = `${store}-products-partial-${dateTime.toISOString().split('T')[0]}.json`;
-            fs.writeFileSync(fileName, JSON.stringify(output, null, 2));
+            currentPage = 1; // Reset page counter for next category
         }
 
-        // Final save
+        // Final save with store name
         const dateTime = new Date();
         const output = {
             dateTime,
+            storeName: store,
             categories: allProducts
         };
         const fileName = `${store}-products-${dateTime.toISOString().split('T')[0]}.json`;
-        fs.writeFileSync(fileName, JSON.stringify(output, null, 2));
+        const outputPath = resolve(__dirname, 'output', fileName);
+        fs.mkdirSync(resolve(__dirname, 'output'), { recursive: true });
+        fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
 
         return allProducts;
     } catch (error) {

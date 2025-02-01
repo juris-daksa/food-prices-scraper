@@ -45,7 +45,7 @@ export async function extractProducts(page, baseUrl) {
               currentPage = parseInt(nextPageNumber);
               await Promise.all([
                   page.waitForNavigation(),
-                  page.goto(absoluteNextPageLink, { waitUntil: "domcontentloaded", timeout: 60000 })
+                  page.goto(`${absoluteNextPageLink}`, { waitUntil: "domcontentloaded", timeout: 60000 })
               ]);
           } else {
               hasNextPage = false;
