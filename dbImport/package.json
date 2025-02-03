@@ -1,0 +1,17 @@
+{
+  "name": "food-products-import",
+  "version": "1.0.0",
+  "description": "Imports products to db from JSON file",
+  "type": "module",
+  "main": "importProducts.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Juris Daksa",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1",
+    "uuid": "^11.0.5"
+  }
+}
