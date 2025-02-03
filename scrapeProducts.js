@@ -91,7 +91,6 @@ export async function scrapeProducts() {
                     const products = await extractProducts(page, baseUrl);
                     allProducts[category] = products;
 
-                    // Save intermediate results with store name and progress information
                     const dateTime = new Date();
                     const output = {
                         dateTime,
@@ -115,10 +114,9 @@ export async function scrapeProducts() {
                 }
             }
 
-            currentPage = 1; // Reset page counter for next category
+            currentPage = 1; 
         }
 
-        // Final save with store name
         const dateTime = new Date();
         const output = {
             dateTime,
