@@ -26,6 +26,8 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "inquirer": "^12.3.3",
+    "proxifly": "^2.0.2",
+    "puppeteer": "^24.2.0",
     "puppeteer-core": "^24.1.1"
   }
 }

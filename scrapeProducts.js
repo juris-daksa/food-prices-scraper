@@ -1,12 +1,10 @@
 import fs from 'fs';
-import { dirname, resolve, join } from 'path';
+import { resolve, join } from 'path';
 import dotenv from 'dotenv';
 import inquirer from 'inquirer';
-import { resetSession } from './utils.js';
-import { fileURLToPath } from 'url';
+import { resetSession, getDirname } from './utils.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = getDirname(import.meta.url);
 
 dotenv.config();
 
@@ -65,8 +63,6 @@ export async function scrapeProducts() {
     let browser;
     let page;
 
-    const brdConfig = process.env.BRD_CONFIG;
-
     try {
         const storeConfigs = await loadStoreConfigs();
         const store = await selectStore(storeConfigs);
@@ -83,7 +79,7 @@ export async function scrapeProducts() {
             const absoluteLink = new URL(href, baseUrl).href;
 
             while (true) {
-                ({ browser, page } = await resetSession(brdConfig));
+                ({ browser, page } = await resetSession());
 
                 try {
                     await page.goto(`${absoluteLink}?page=${currentPage}`, { waitUntil: "domcontentloaded", timeout: 60000 });

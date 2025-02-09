@@ -1,8 +1,17 @@
-import puppeteer from 'puppeteer-core';
+import puppeteer from 'puppeteer';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import { getRandomProxy } from './proxy.js';
 
-export async function resetSession(brdConfig) {
-    const browser = await puppeteer.connect({
-        browserWSEndpoint: brdConfig, // The WebSocket endpoint for connecting to the remote browser
+export function getDirname(importMetaUrl) {
+    const __filename = fileURLToPath(importMetaUrl);
+    return dirname(__filename);
+}
+
+export async function resetSession() {
+    const proxy = await getRandomProxy();
+    const browser = await puppeteer.launch({
+        args: [`--proxy-server=${proxy}`],
         ignoreHTTPSErrors: true,
         headless: true,
     });
