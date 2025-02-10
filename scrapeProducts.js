@@ -85,6 +85,18 @@ export async function scrapeProducts() {
             while (true) {
                 ({ browser, page } = await resetSession(brdConfig));
 
+                await page.setRequestInterception(true);
+                page.on('request', (req) => {
+                    const resourceType = req.resourceType();
+                    if (['image', 'stylesheet', 'font'].includes(resourceType)) {
+                        req.abort();
+                    } else {
+                        req.continue();
+                    }
+                });
+
+                await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1');
+
                 try {
                     await page.goto(`${absoluteLink}?page=${currentPage}`, { waitUntil: "domcontentloaded", timeout: 60000 });
                     const { extractProducts } = await import(`./stores/${store}/scraper.js`);
