@@ -67,6 +67,11 @@ export async function scrapeProducts() {
 
     const brdConfig = process.env.BRD_CONFIG;
 
+    if (!brdConfig) {
+        console.error('Error: BRD_CONFIG is not defined. Please check your .env file.');
+        return { success: false, message: 'Missing BRD_CONFIG in .env file' };
+    }
+
     try {
         const storeConfigs = await loadStoreConfigs();
         const store = await selectStore(storeConfigs);
@@ -128,8 +133,9 @@ export async function scrapeProducts() {
         fs.mkdirSync(resolve(__dirname, 'output'), { recursive: true });
         fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
 
-        return allProducts;
+        return { success: true, data: allProducts };
     } catch (error) {
         console.error('Export failed:', error);
+        return { success: false, message: error.message };
     }
 }
