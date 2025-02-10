@@ -83,10 +83,11 @@ export async function scrapeProducts() {
         let currentPage = 1;
         let continueScraping = true;
 
+        const { extractProducts, getNextPageLink } = await import(`./stores/${store}/scraper.js`);
+
         for (const { href, category } of selectedCategories) {
             currentCategory = category;
-            const baseUrl = config.baseUrl;
-            let absoluteLink = new URL(href, baseUrl).href;
+            let absoluteLink = new URL(href, config.baseUrl).href;
 
             const dateTime = new Date();
             const partialFileName = `${store}-products-partial-${dateTime.toISOString().split('T')[0]}.json`;
@@ -96,10 +97,7 @@ export async function scrapeProducts() {
                 ({ browser, page } = await resetSession(brdConfig, absoluteLink));
 
                 try {
-                    await page.goto(`${absoluteLink}?page=${currentPage}`, { waitUntil: "networkidle0", timeout: 60000 });
-
-                    const { extractProducts, getNextPageLink } = await import(`./stores/${store}/scraper.js`);
-                    const products = await extractProducts(page, baseUrl);
+                    const products = await extractProducts(page, config.baseUrl);
                     allProducts = allProducts.concat(products);
 
                     const output = {
@@ -116,7 +114,7 @@ export async function scrapeProducts() {
                     console.log(`Next page link: ${nextPageLink}`);
 
                     if (nextPageLink) {
-                        absoluteLink = new URL(nextPageLink, baseUrl).href;
+                        absoluteLink = new URL(nextPageLink, config.baseUrl).href;
                         currentPage += 1; // Move to the next page
                     } else {
                         break;
