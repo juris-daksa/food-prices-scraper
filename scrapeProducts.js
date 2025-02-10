@@ -78,52 +78,55 @@ export async function scrapeProducts() {
         const config = storeConfigs[store];
 
         const selectedCategories = config.categories;
-        let allProducts = {};
+        let allProducts = [];
         let currentCategory = null;
         let currentPage = 1;
+        let continueScraping = true;
 
         for (const { href, category } of selectedCategories) {
             currentCategory = category;
             const baseUrl = config.baseUrl;
-            const absoluteLink = new URL(href, baseUrl).href;
+            let absoluteLink = new URL(href, baseUrl).href;
 
-            while (true) {
-                ({ browser, page } = await resetSession(brdConfig));
+            const dateTime = new Date();
+            const partialFileName = `${store}-products-partial-${dateTime.toISOString().split('T')[0]}.json`;
+            const partialOutputPath = resolve(__dirname, 'output', partialFileName);
 
-                await page.setRequestInterception(true);
-                page.on('request', (req) => {
-                    const resourceType = req.resourceType();
-                    if (['image', 'stylesheet', 'font'].includes(resourceType)) {
-                        req.abort();
-                    } else {
-                        req.continue();
-                    }
-                });
-
-                await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1');
+            while (continueScraping) {
+                ({ browser, page } = await resetSession(brdConfig, absoluteLink));
 
                 try {
-                    await page.goto(`${absoluteLink}?page=${currentPage}`, { waitUntil: "domcontentloaded", timeout: 60000 });
-                    const { extractProducts } = await import(`./stores/${store}/scraper.js`);
-                    const products = await extractProducts(page, baseUrl);
-                    allProducts[category] = products;
+                    await page.goto(`${absoluteLink}?page=${currentPage}`, { waitUntil: "networkidle0", timeout: 60000 });
 
-                    const dateTime = new Date();
+                    const { extractProducts, getNextPageLink } = await import(`./stores/${store}/scraper.js`);
+                    const products = await extractProducts(page, baseUrl);
+                    allProducts = allProducts.concat(products);
+
                     const output = {
                         dateTime,
                         storeName: store,
-                        categories: allProducts,
-                        currentCategory,
+                        categories: { [currentCategory]: allProducts },
                         currentPage
                     };
-                    const fileName = `${store}-products-partial-${dateTime.toISOString().split('T')[0]}.json`;
-                    const outputPath = resolve(__dirname, 'output', fileName);
                     fs.mkdirSync(resolve(__dirname, 'output'), { recursive: true });
-                    fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
-                    break;
+                    fs.writeFileSync(partialOutputPath, JSON.stringify(output, null, 2));
+
+                    const nextPageLink = await getNextPageLink(page);
+
+                    console.log(`Next page link: ${nextPageLink}`);
+
+                    if (nextPageLink) {
+                        absoluteLink = new URL(nextPageLink, baseUrl).href;
+                        currentPage += 1; // Move to the next page
+                    } else {
+                        break;
+                    }
                 } catch (error) {
                     const retry = await retryCategoryPrompt(category, error);
-                    if (!retry) {
+                    if (retry) {
+                        continue; // Retry the same page
+                    } else {
+                        continueScraping = false; // Stop scraping
                         break;
                     }
                 } finally {
@@ -131,19 +134,21 @@ export async function scrapeProducts() {
                 }
             }
 
+            if (!continueScraping) break; // Stop scraping if user chose not to retry
+
             currentPage = 1; 
         }
 
         const dateTime = new Date();
-        const output = {
+        const finalOutput = {
             dateTime,
             storeName: store,
-            categories: allProducts
+            categories: { [currentCategory]: allProducts }
         };
-        const fileName = `${store}-products-${dateTime.toISOString().split('T')[0]}.json`;
-        const outputPath = resolve(__dirname, 'output', fileName);
+        const finalFileName = `${store}-products-${dateTime.toISOString().split('T')[0]}.json`;
+        const finalOutputPath = resolve(__dirname, 'output', finalFileName);
         fs.mkdirSync(resolve(__dirname, 'output'), { recursive: true });
-        fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
+        fs.writeFileSync(finalOutputPath, JSON.stringify(finalOutput, null, 2));
 
         return { success: true, data: allProducts };
     } catch (error) {

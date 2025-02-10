@@ -1,73 +1,127 @@
 export async function extractProducts(page, baseUrl) {
-  let products = [];
-  let currentPage = 1;
-  let hasNextPage = true;
+    try {
+        const items = await page.evaluate(() => {
+            const products = [];
+            const productElements = document.querySelectorAll('div.js-product-container');
 
-  while (hasNextPage) {
-      const newProducts = await page.evaluate(() => {
-          const items = [];
-          const productElements = document.querySelectorAll('div.js-product-container');
+            productElements.forEach(product => {
+                const gtmEecProduct = product.getAttribute('data-gtm-eec-product');
+                const productInfo = JSON.parse(gtmEecProduct);
+                const productNameElement = product.querySelector('p.card__name');
+                const title = productNameElement ? productNameElement.innerText : productInfo.name;
 
-          productElements.forEach(product => {
-              const gtmEecProduct = product.getAttribute('data-gtm-eec-product');
-              const productInfo = JSON.parse(gtmEecProduct);
-              const productNameElement = product.querySelector('p.card__name');
-              const title = productNameElement ? productNameElement.innerText : productInfo.name;
-              const priceSpanElement = product.querySelector('div.price-tag.card__price span');
-              const priceSupElement = product.querySelector('div.price-tag.card__price sup');
-              const price = priceSpanElement && priceSupElement
-                  ? parseFloat(priceSpanElement.innerText.replace(',', '.')) + parseFloat(`0.${priceSupElement.innerText}`)
-                  : productInfo.price;
-              const roundedPrice = Math.round(price * 100) / 100;
-              const oldPriceElement = product.querySelector('div.old-price-tag.card__old-price span');
-              const retailPrice = oldPriceElement ? parseFloat(oldPriceElement.innerText.replace(',', '.')) : null;
-              const discount = retailPrice ? Math.round(((retailPrice - roundedPrice) / retailPrice) * 100) : null;
-              const pricePerElement = product.querySelector('p.card__price-per');
-              const pricePerText = pricePerElement ? pricePerElement.innerText.replace(',', '.') : '';
-              const [unitPrice, unit] = pricePerText.split(' €/');
-              const productUrl = product.querySelector('a.card__url') ? product.querySelector('a.card__url').href : '';
+                let retailPrice = null;
+                let retailUnitPrice = null;
+                let discountPrice = null;
+                let discountUnitPrice = null;
+                let discountPercentage = null;
+                let unit = '';
 
-              items.push({ 
-                  title, 
-                  price: roundedPrice, 
-                  discount, 
-                  productUrl, 
-                  unitPrice: parseFloat(unitPrice), 
-                  unit: unit ? unit.trim() : '',
-                  retailPrice 
-              });
-          });
+                // Check if the product has a discount price
+                const priceWrapperElement = product.querySelector('div.card__price-wrapper');
+                if (priceWrapperElement && priceWrapperElement.classList.contains('-has-discount')) {
+                    const discountPriceSpan = product.querySelector('div.price-tag.card__price span');
+                    const discountPriceSup = product.querySelector('div.price-tag.card__price sup');
+                    if (discountPriceSpan && discountPriceSup) {
+                        discountPrice = parseFloat(discountPriceSpan.innerText.replace(',', '.')) + parseFloat(`0.${discountPriceSup.innerText}`);
+                        discountPrice = Math.round(discountPrice * 100) / 100;
 
-          return items;
-      });
+                        const discountPricePerElement = product.querySelector('p.card__price-per');
+                        const discountPricePerText = discountPricePerElement ? discountPricePerElement.innerText.replace(',', '.') : '';
+                        if (discountPricePerText) {
+                            [discountUnitPrice, unit] = discountPricePerText.split(' €/');
+                            discountUnitPrice = parseFloat(discountUnitPrice);
+                        }
 
-      products = products.concat(newProducts);
+                        const oldPriceElement = product.querySelector('div.old-price-tag.card__old-price span');
+                        if (oldPriceElement) {
+                            retailPrice = parseFloat(oldPriceElement.innerText.replace(',', '.'));
+                            retailUnitPrice = (retailPrice / discountPrice) * discountUnitPrice;
+                            retailUnitPrice = Math.round(retailUnitPrice * 100) / 100;
+                            discountPercentage = Math.round(((retailPrice - discountPrice) / retailPrice) * 100);
+                        }
+                    }
+                } else {
+                    const priceSpanElement = product.querySelector('div.price-tag.card__price span');
+                    const priceSupElement = product.querySelector('div.price-tag.card__price sup');
+                    if (priceSpanElement && priceSupElement) {
+                        const price = parseFloat(priceSpanElement.innerText.replace(',', '.')) + parseFloat(`0.${priceSupElement.innerText}`);
+                        retailPrice = Math.round(price * 100) / 100;
 
-      const nextPageLink = await page.evaluate(() => {
-          const nextPageElement = document.querySelector('a[aria-label*="Next"], a[rel="next"]');
-          return nextPageElement ? nextPageElement.getAttribute('href') : null;
-      });
+                        const pricePerElement = product.querySelector('p.card__price-per');
+                        const pricePerText = pricePerElement ? pricePerElement.innerText.replace(',', '.') : '';
+                        if (pricePerText) {
+                            [retailUnitPrice, unit] = pricePerText.split(' €/');
+                            retailUnitPrice = parseFloat(retailUnitPrice);
+                        }
+                    }
+                }
 
-      console.log(`Next page link: ${nextPageLink}`);
+                // Extract loyalty price and its unit price
+                const loyaltyPriceElement = product.querySelector('div.price-label[title*="MansRimi kartes lietotājiem"]');
+                let loyaltyPrice = null;
+                let loyaltyUnitPrice = null;
+                let loyaltyDiscountPercentage = null;
+                if (loyaltyPriceElement) {
+                    const loyaltyMajorElement = loyaltyPriceElement.querySelector('div.price-label__price span.major');
+                    const loyaltyMinorElement = loyaltyPriceElement.querySelector('div.price-label__price div.minor span.cents');
+                    if (loyaltyMajorElement && loyaltyMinorElement) {
+                        const loyaltyPriceValue = parseFloat(loyaltyMajorElement.innerText.replace(',', '.')) + parseFloat(`0.${loyaltyMinorElement.innerText}`);
+                        loyaltyPrice = Math.round(loyaltyPriceValue * 100) / 100;
 
-      if (nextPageLink) {
-          const absoluteNextPageLink = new URL(nextPageLink, baseUrl).href;
-          const nextPageNumber = new URL(absoluteNextPageLink).searchParams.get('currentPage');
-          console.log(`Next page URL: ${absoluteNextPageLink}`);
-          console.log(`Next page number: ${nextPageNumber}`);
-          if (nextPageNumber && parseInt(nextPageNumber) > currentPage) {
-              currentPage = parseInt(nextPageNumber);
-              await Promise.all([
-                  page.waitForNavigation(),
-                  page.goto(`${absoluteNextPageLink}`, { waitUntil: "domcontentloaded", timeout: 60000 })
-              ]);
-          } else {
-              hasNextPage = false;
-          }
-      } else {
-          hasNextPage = false;
-      }
-  }
+                        const loyaltyPricePerElement = loyaltyPriceElement.querySelector('div.price-per-unit');
+                        const loyaltyPricePerText = loyaltyPricePerElement ? loyaltyPricePerElement.innerText.replace(',', '.') : '';
+                        if (loyaltyPricePerText) {
+                            const [loyaltyUnitPriceValue] = loyaltyPricePerText.split(' €/');
+                            loyaltyUnitPrice = loyaltyUnitPriceValue ? parseFloat(loyaltyUnitPriceValue) : null;
+                        }
 
-  return products;
+                        if (retailPrice && loyaltyPrice) {
+                            loyaltyDiscountPercentage = Math.round(((retailPrice - loyaltyPrice) / retailPrice) * 100);
+                        }
+                    }
+                }
+
+                const productUrl = product.querySelector('a.card__url') ? product.querySelector('a.card__url').href : '';
+
+                products.push({
+                    title, 
+                    unit: unit ? unit.trim() : '',
+                    retailPrice: {
+                        amount: retailPrice,
+                        unitPrice: retailUnitPrice
+                    },
+                    loyaltyPrice: {
+                        amount: loyaltyPrice,
+                        unitPrice: loyaltyUnitPrice,
+                        discount: loyaltyDiscountPercentage
+                    },
+                    discountPrice: {
+                        amount: discountPrice,
+                        unitPrice: discountUnitPrice,
+                        discount: discountPercentage
+                    },
+                    productUrl
+                });
+            });
+
+            return products;
+        });
+
+        return items;
+    } catch (error) {
+        throw new Error(`Error extracting products on page ${page.url()}: ${error.message}`);
+    }
+}
+
+export async function getNextPageLink(page) {
+    try {
+        const nextPageLink = await page.evaluate(() => {
+            const nextPageElement = document.querySelector('a[aria-label*="Next"], a[rel="next"]');
+            return nextPageElement ? nextPageElement.getAttribute('href') : null;
+        });
+        return nextPageLink;
+    } catch (error) {
+        throw new Error(`Error getting next page link on page ${page.url()}: ${error.message}`);
+    }
 }
