@@ -94,10 +94,14 @@ export async function scrapeProducts() {
             let absoluteLink = new URL(relativeLink, config.baseUrl).href;
             console.log(`Navigating to: ${absoluteLink}`);
 
-            while (true) {
-                ({ browser, page } = await resetSession(brdConfig, absoluteLink));
+            let retryCount = 0;
+            const maxRetries = 3;
+            let success = false;
 
+            while (retryCount < maxRetries && !success) {
                 try {
+                    ({ browser, page } = await resetSession(brdConfig, absoluteLink));
+
                     const products = await extractProducts(page);
                     allProducts[category] = allProducts[category].concat(products);
 
@@ -123,16 +127,21 @@ export async function scrapeProducts() {
                     const partialOutputPath = resolve(__dirname, 'output', partialFileName);
                     fs.mkdirSync(resolve(__dirname, 'output'), { recursive: true });
                     fs.writeFileSync(partialOutputPath, JSON.stringify(output, null, 2));
-                    console.log(`Scraped ${products.length} products, progress saved ✔`);
+                    console.log(`✔ Scraped ${products.length} products at ".../${absoluteLink.split('/').pop()}", progress saved`);
 
                     if (nextPageLink) {
                         absoluteLink = new URL(nextPageLink, config.baseUrl).href;
                     } else {
+                        success = true;
                         break;
                     }
                 } catch (error) {
-                    console.error('Error during scraping:', error);
-                    break;
+                    retryCount++;
+                    console.error(`❌ Error during scraping attempt ${retryCount}/${maxRetries} at ".../${absoluteLink.split('/').pop()}": `, error);
+                    if (retryCount >= maxRetries) {
+                        console.error('Max retry limit reached. Exiting scraper.');
+                        process.exit(1);
+                    }
                 } finally {
                     await browser?.close();
                 }
