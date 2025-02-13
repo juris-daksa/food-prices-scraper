@@ -47,19 +47,6 @@ async function selectStore(storeConfigs) {
     return response.store;
 }
 
-async function retryCategoryPrompt(category, error) {
-    const response = await inquirer.prompt([
-        {
-            type: 'confirm',
-            message: `Failed to extract products from category "${category}". Would you like to try again?`,
-            name: 'retry',
-            default: true
-        }
-    ]);
-
-    return response.retry;
-}
-
 async function loadPartialData(store) {
     const dateTime = new Date();
     const partialFileName = `${store}-products-partial-${dateTime.toISOString().split('T')[0]}.json`;
@@ -67,23 +54,10 @@ async function loadPartialData(store) {
 
     if (fs.existsSync(partialOutputPath)) {
         const partialData = JSON.parse(fs.readFileSync(partialOutputPath));
-        console.log('Loaded partial data:', partialData);
-        return {
-            allProducts: partialData.categories[partialData.currentCategory] || [],
-            currentPage: partialData.currentPage || 1,
-            currentCategory: partialData.currentCategory || null,
-            lastAbsoluteLink: partialData.lastAbsoluteLink || null,
-            remainingCategories: partialData.remainingCategories || [],
-        };
+        return partialData;
     }
 
-    return {
-        allProducts: [],
-        currentPage: 1,
-        currentCategory: null,
-        lastAbsoluteLink: null,
-        remainingCategories: [],
-    };
+    return null;
 }
 
 export async function scrapeProducts() {
@@ -101,90 +75,81 @@ export async function scrapeProducts() {
         const store = await selectStore(storeConfigs);
         const config = storeConfigs[store];
 
-        const selectedCategories = config.categories;
         const partialData = await loadPartialData(store);
-        let { allProducts, currentPage, currentCategory, lastAbsoluteLink, remainingCategories } = partialData;
-        let continueScraping = true;
+        let allProducts = {};
+        let selectedCategories = config.categories;
+
+        if (partialData) {
+            allProducts = partialData.categories || {};
+            selectedCategories = partialData.remainingCategories.length ? partialData.remainingCategories : config.categories;
+        }
 
         console.log('Starting scraping...');
 
         const { extractProducts, getNextPageLink } = await import(`./stores/${store}/scraper.js`);
 
-        if (remainingCategories.length === 0) {
-            remainingCategories = selectedCategories.map(cat => ({ ...cat }));
-        }
+        for (const { relativeLink, category } of selectedCategories) {
+            if (!allProducts[category]) allProducts[category] = [];
 
-        for (const { href, category } of remainingCategories) {
-            if (currentCategory && category !== currentCategory) {
-                continue;
-            }
-            currentCategory = category;
-            let absoluteLink = lastAbsoluteLink || new URL(href, config.baseUrl).href;
+            let absoluteLink = new URL(relativeLink, config.baseUrl).href;
             console.log(`Navigating to: ${absoluteLink}`);
 
-            while (continueScraping) {
+            while (true) {
                 ({ browser, page } = await resetSession(brdConfig, absoluteLink));
 
                 try {
-                    const products = await extractProducts(page, config.baseUrl);
-                    allProducts = allProducts.concat(products);
+                    const products = await extractProducts(page);
+                    allProducts[category] = allProducts[category].concat(products);
 
                     const nextPageLink = await getNextPageLink(page);
-                    
-                    if (!nextPageLink) {
-                        const dateTime = new Date();
-                        const output = {
-                            dateTime,
-                            storeName: store,
-                            categories: { [currentCategory]: allProducts },
-                            currentPage,
-                            currentCategory,
-                            lastAbsoluteLink: absoluteLink,
-                            remainingCategories: remainingCategories.slice(remainingCategories.findIndex(cat => cat.category === currentCategory) + 1),
-                        };
-                        const partialFileName = `${store}-products-partial-${dateTime.toISOString().split('T')[0]}.json`;
-                        const partialOutputPath = resolve(__dirname, 'output', partialFileName);
-                        fs.mkdirSync(resolve(__dirname, 'output'), { recursive: true });
-                        fs.writeFileSync(partialOutputPath, JSON.stringify(output, null, 2));
-                        console.log('Saved partial output.');
 
-                        break;
-                    }
+                    const dateTime = new Date();
+                    const remainingCategories = [
+                        {
+                            relativeLink: nextPageLink || relativeLink,
+                            category
+                        },
+                        ...selectedCategories.slice(selectedCategories.findIndex(cat => cat.category === category) + 1)
+                    ];
 
-                    absoluteLink = new URL(nextPageLink, config.baseUrl).href;
-                    currentPage += 1;
-                    console.log(`Navigating to next page: ${absoluteLink}`);
-                } catch (error) {
-                    const retry = await retryCategoryPrompt(category, error);
-                    if (retry) {
-                        console.log(`Retrying category: ${category}`);
-                        continue;
+                    const output = {
+                        dateTime,
+                        storeName: store,
+                        categories: allProducts,
+                        remainingCategories
+                    };
+
+                    const partialFileName = `${store}-products-partial-${dateTime.toISOString().split('T')[0]}.json`;
+                    const partialOutputPath = resolve(__dirname, 'output', partialFileName);
+                    fs.mkdirSync(resolve(__dirname, 'output'), { recursive: true });
+                    fs.writeFileSync(partialOutputPath, JSON.stringify(output, null, 2));
+                    console.log(`Scraped ${products.length} products, progress saved ✔`);
+
+                    if (nextPageLink) {
+                        absoluteLink = new URL(nextPageLink, config.baseUrl).href;
                     } else {
-                        console.log(`Stopping scraping for category: ${category}`);
-                        continueScraping = false;
                         break;
                     }
+                } catch (error) {
+                    console.error('Error during scraping:', error);
+                    break;
                 } finally {
                     await browser?.close();
                 }
             }
-
-            if (!continueScraping) break;
-
-            currentPage = 1;
         }
 
         const dateTime = new Date();
         const finalOutput = {
             dateTime,
             storeName: store,
-            categories: { [currentCategory]: allProducts }
+            categories: allProducts
         };
         const finalFileName = `${store}-products-${dateTime.toISOString().split('T')[0]}.json`;
         const finalOutputPath = resolve(__dirname, 'output', finalFileName);
         fs.mkdirSync(resolve(__dirname, 'output'), { recursive: true });
         fs.writeFileSync(finalOutputPath, JSON.stringify(finalOutput, null, 2));
-        console.log('Saved final output.');
+        console.log('Saved final output:', finalFileName);
 
         return { success: true, data: allProducts };
     } catch (error) {
