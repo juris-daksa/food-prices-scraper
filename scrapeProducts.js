@@ -131,6 +131,7 @@ export async function scrapeProducts() {
 
                     if (nextPageLink) {
                         absoluteLink = new URL(nextPageLink, config.baseUrl).href;
+                        retryCount = 0;
                     } else {
                         success = true;
                         break;
