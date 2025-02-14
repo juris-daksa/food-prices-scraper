@@ -50,3 +50,21 @@ CREATE TABLE IF NOT EXISTS pdn_ids (
     matched_id INT,
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
+
+ALTER TABLE products
+RENAME COLUMN slug TO product_url;
+
+CREATE TABLE IF NOT EXISTS current_extended_prices (
+    product_id UUID PRIMARY KEY,
+    retail_comparable_price NUMERIC(10, 2),
+    discount_comparable_price NUMERIC(10, 2),
+    loyalty_comparable_price NUMERIC(10, 2),
+    retail_price NUMERIC(10, 2),
+    discount_price NUMERIC(10, 2),
+    loyalty_price NUMERIC(10, 2),
+    discount_percentage INT,
+    loyalty_discount_percentage INT,
+    unit VARCHAR(50),
+    date_updated DATE,
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
