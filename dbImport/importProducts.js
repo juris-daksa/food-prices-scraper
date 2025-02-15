@@ -59,23 +59,21 @@ async function upsertProduct(product, storeId, categoryId) {
     }
 }
 
-async function upsertCurrentPrice(productId, product) {
-    // Extract the necessary fields from the product object with checks for undefined properties
+async function upsertCurrentPrice(productId, product, priceUpdatedDate) {
     const retailAmount = product.retailPrice?.amount ?? null;
     const retailUnitPrice = product.retailPrice?.unitPrice ?? null;
     const discountAmount = product.discountPrice?.amount ?? null;
     const discountUnitPrice = product.discountPrice?.unitPrice ?? null;
     const loyaltyAmount = product.loyaltyPrice?.amount ?? null;
     const loyaltyUnitPrice = product.loyaltyPrice?.unitPrice ?? null;
-    const loyaltyDiscount = product.loyaltyPrice?.discount ?? null;
     const discountPercentage = product.discountPercentage ?? null;
     const loyaltyDiscountPercentage = product.loyaltyDiscountPercentage ?? null;
     const unit = product.unit ?? null;
 
     await client.query(
         'INSERT INTO current_extended_prices (product_id, retail_comparable_price, discount_comparable_price, loyalty_comparable_price, retail_price, discount_price, loyalty_price, discount_percentage, loyalty_discount_percentage, unit, date_updated) ' +
-        'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW()) ' +
-        'ON CONFLICT (product_id) DO UPDATE SET retail_comparable_price = $2, discount_comparable_price = $3, loyalty_comparable_price = $4, retail_price = $5, discount_price = $6, loyalty_price = $7, discount_percentage = $8, loyalty_discount_percentage = $9, unit = $10, date_updated = NOW()',
+        'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ' +
+        'ON CONFLICT (product_id) DO UPDATE SET retail_comparable_price = $2, discount_comparable_price = $3, loyalty_comparable_price = $4, retail_price = $5, discount_price = $6, loyalty_price = $7, discount_percentage = $8, loyalty_discount_percentage = $9, unit = $10, date_updated = $11',
         [
             productId,
             retailUnitPrice,
@@ -85,39 +83,39 @@ async function upsertCurrentPrice(productId, product) {
             discountAmount,
             loyaltyAmount,
             discountPercentage,
-            loyaltyDiscount,
-            unit
+            loyaltyDiscountPercentage,
+            unit,
+            priceUpdatedDate
         ]
     );
 }
 
 async function importProductsFromFile(filePath) {
     const data = fs.readFileSync(filePath);
-    const { categories, storeName } = JSON.parse(data);
+    const { dateTime, categories, storeName } = JSON.parse(data);
 
     console.log(`Importing data from file: ${filePath}`);
     console.log(`Store: ${storeName}`);
+    console.log(`Date Updated: ${dateTime}`);
 
     const storeId = await upsertStore(storeName);
     let importedCount = 0;
-    let skippedCount = 0;
 
     for (const [categoryName, products] of Object.entries(categories)) {
         const categoryId = await upsertCategory(categoryName);
 
         for (const product of products) {
             const productId = await upsertProduct(product, storeId, categoryId);
-            await upsertCurrentPrice(productId, product);
+            await upsertCurrentPrice(productId, product, dateTime);
             importedCount++;
         }
     }
 
     console.log(`Import completed for file: ${filePath}`);
     console.log(`Number of items imported: ${importedCount}`);
-    console.log(`Number of items skipped: ${skippedCount}`);
 }
 
-async function importProducts() {
+async function main() {
     const outputDir = path.resolve(__dirname, process.env.OUTPUT_DIR);
     const files = fs.readdirSync(outputDir).filter(file => file.endsWith('.json'));
 
@@ -142,6 +140,6 @@ async function importProducts() {
     console.log('All imports completed.');
 }
 
-importProducts().catch(err => {
+main().catch(err => {
     console.error('Import failed:', err);
 });
