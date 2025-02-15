@@ -28,6 +28,8 @@ export async function extractProducts(page, baseUrl) {
                             retailUnitPrice = productInfo.promotion.oldComparativeRate ? Math.round(parseFloat(productInfo.promotion.oldComparativeRate) * 100) / 100 : retailUnitPrice;
                         } else if (productInfo.promotion.type === 'LOYALTY_PRICE') {
                             loyaltyDiscount = productInfo.promotion.percentage;
+                            discountUnitPrice = productInfo.comparative_unit_price ? Math.round(parseFloat(productInfo.comparative_unit_price) * 100) / 100 : null;
+
                         }
                     }
 
