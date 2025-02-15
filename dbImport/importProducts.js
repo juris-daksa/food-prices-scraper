@@ -43,7 +43,12 @@ async function upsertCategory(categoryName) {
 async function upsertProduct(product, storeId, categoryId) {
     const result = await client.query('SELECT id FROM products WHERE title = $1 AND store_id = $2', [product.title, storeId]);
     if (result.rows.length > 0) {
-        return result.rows[0].id;
+        const productId = result.rows[0].id;
+        await client.query(
+            'UPDATE products SET category_id = $1, product_url = $2 WHERE id = $3',
+            [categoryId, product.productUrl, productId]
+        );
+        return productId;
     } else {
         const productId = uuidv4();
         await client.query(
