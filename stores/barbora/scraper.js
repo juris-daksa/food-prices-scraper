@@ -90,4 +90,3 @@ export async function getNextPageLink(page) {
         throw new Error(`Error getting next page link on page ${page.url()}: ${error.message}`);
     }
 }
-
