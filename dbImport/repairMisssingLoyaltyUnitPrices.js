@@ -3,7 +3,6 @@ import inquirer from 'inquirer';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load environment variables from .env file
 dotenv.config();
 
 const outputDir = process.env.OUTPUT_DIR;
