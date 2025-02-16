@@ -66,8 +66,8 @@ async function upsertCurrentPrice(productId, product, priceUpdatedDate) {
     const discountUnitPrice = product.discountPrice?.unitPrice ?? null;
     const loyaltyAmount = product.loyaltyPrice?.amount ?? null;
     const loyaltyUnitPrice = product.loyaltyPrice?.unitPrice ?? null;
-    const discountPercentage = product.discountPercentage ?? null;
-    const loyaltyDiscountPercentage = product.loyaltyDiscountPercentage ?? null;
+    const discountPercentage = product.discountPrice.discount ?? null;
+    const loyaltyDiscountPercentage = product.loyaltyPrice.discount ?? null;
     const unit = product.unit ?? null;
 
     await client.query(
