@@ -2,40 +2,44 @@
     "baseUrl": "https://www.rimi.lv",
     "categories": [
         {
-            "href": "/e-veikals/lv/produkti/augli-un-darzeni/c/SH-2",
+            "relativeLink": "/e-veikals/lv/produkti/augli-un-darzeni/c/SH-2",
             "category": "Augļi un dārzeņi"
         },
         {
-            "href": "/e-veikals/lv/produkti/gala-zivis-un-gatava-kulinarija/c/SH-6",
+            "relativeLink": "/e-veikals/lv/produkti/gala-zivis-un-gatava-kulinarija/c/SH-6",
             "category": "Gaļa, zivis un gatavā kulinārija"
         },
         {
-            "href": "/e-veikals/lv/produkti/piena-produkti-un-olas/c/SH-11",
+            "relativeLink": "/e-veikals/lv/produkti/piena-produkti-un-olas/c/SH-11",
             "category": "Piena produkti un olas"
         },
         {
-            "href": "/e-veikals/lv/produkti/maize-un-konditoreja/c/SH-7",
+            "relativeLink": "/e-veikals/lv/produkti/maize-un-konditoreja/c/SH-7",
             "category": "Maize un konditoreja"
         },
         {
-            "href": "/e-veikals/lv/produkti/saldetie-edieni/c/SH-12",
+            "relativeLink": "/e-veikals/lv/produkti/saldetie-edieni/c/SH-12",
             "category": "Saldētie ēdieni"
         },
         {
-            "href": "/e-veikals/lv/produkti/iepakota-partika/c/SH-4",
+            "relativeLink": "/e-veikals/lv/produkti/iepakota-partika/c/SH-4",
             "category": "Iepakotā pārtika"
         },
         {
-            "href": "/e-veikals/lv/produkti/saldumi-un-uzkodas/c/SH-13",
+            "relativeLink": "/e-veikals/lv/produkti/saldumi-un-uzkodas/c/SH-13",
             "category": "Saldumi un uzkodas"
         },
         {
-            "href": "/e-veikals/lv/produkti/dzerieni/c/SH-5",
+            "relativeLink": "/e-veikals/lv/produkti/dzerieni/c/SH-5",
             "category": "Dzērieni"
         },
         {
-            "href": "/e-veikals/lv/produkti/alkoholiskie-dzerieni/c/SH-1",
+            "relativeLink": "/e-veikals/lv/produkti/alkoholiskie-dzerieni/c/SH-1",
             "category": "Alkoholiskie dzērieni"
+        },
+        {
+            "relativeLink": "/e-veikals/lv/produkti/veganiem-un-vegetariesiem/c/SH-16",
+            "category": "Iepakotā pārtika"
         }
     ]
 }

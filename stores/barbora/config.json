@@ -2,40 +2,68 @@
     "baseUrl": "https://barbora.lv",
     "categories": [
         {
-            "href": "/augli-un-darzeni",
+            "relativeLink": "/augli-un-darzeni",
             "category": "Augļi un dārzeņi"
         },
         {
-            "href": "/gala-zivs-un-gatava-kulinarija",
+            "relativeLink": "/gala-zivs-un-gatava-kulinarija",
             "category": "Gaļa, zivis un gatavā kulinārija"
         },
         {
-            "href": "/piena-produkti-un-olas",
+            "relativeLink": "/piena-produkti-un-olas",
             "category": "Piena produkti un olas"
         },
         {
-            "href": "/maize-un-konditorejas-izstradajumi",
+            "relativeLink": "/maize-un-konditorejas-izstradajumi",
             "category": "Maize un konditoreja"
         },
         {
-            "href": "/saldeta-partika",
+            "relativeLink": "/saldeta-partika",
             "category": "Saldētie ēdieni"
         },
         {
-            "href": "/bakaleja",
+            "relativeLink": "/bakaleja",
             "category": "Iepakotā pārtika"
         },
         {
-            "href": "/saldumi-un-uzkodas",
+            "relativeLink": "/saldumi-un-uzkodas",
             "category": "Saldumi un uzkodas"
         },
         {
-            "href": "/dzerieni",
+            "relativeLink": "/dzerieni/alus-sidri-un-kokteili",
+            "category": "Alkoholiskie dzērieni"
+        },
+        {
+            "relativeLink": "/dzerieni/vini",
+            "category": "Alkoholiskie dzērieni"
+        },
+        {
+            "relativeLink": "/dzerieni/stiprie-alkoholiskie-dzerieni",
+            "category": "Alkoholiskie dzērieni"
+        },
+        {
+            "relativeLink": "/dzerieni/udens",
             "category": "Dzērieni"
         },
         {
-            "href": "/dzerieni/alus-sidri-un-kokteili",
-            "category": "Alkoholiskie dzērieni"
+            "relativeLink": "/dzerieni/limonade",
+            "category": "Dzērieni"
+        },
+        {
+            "relativeLink": "/dzerieni/karstvins-un-karstie-dzerieni",
+            "category": "Dzērieni"
+        },
+        {
+            "relativeLink": "/dzerieni/sulas-nektari-un-sulu-dzerieni",
+            "category": "Dzērieni"
+        },
+        {
+            "relativeLink": "/dzerieni/energijas-un-izotoniskie-dzerieni",
+            "category": "Dzērieni"
+        },
+        {
+            "relativeLink": "/dzerieni/bezalkoholiskais-alus-un-vins",
+            "category": "Dzērieni"
         }
     ]
 }

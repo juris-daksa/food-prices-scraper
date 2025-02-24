@@ -3,6 +3,7 @@ import path from 'path';
 import pkg from 'pg';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
+import inquirer from 'inquirer';
 import { fileURLToPath } from 'url';
 
 const { Client } = pkg;
@@ -42,67 +43,94 @@ async function upsertCategory(categoryName) {
 async function upsertProduct(product, storeId, categoryId) {
     const result = await client.query('SELECT id FROM products WHERE title = $1 AND store_id = $2', [product.title, storeId]);
     if (result.rows.length > 0) {
-        return result.rows[0].id;
+        const productId = result.rows[0].id;
+        await client.query(
+            'UPDATE products SET category_id = $1, product_url = $2 WHERE id = $3',
+            [categoryId, product.productUrl, productId]
+        );
+        return productId;
     } else {
         const productId = uuidv4();
         await client.query(
-            'INSERT INTO products (id, category_id, store_id, title) VALUES ($1, $2, $3, $4)',
-            [productId, categoryId, storeId, product.title]
+            'INSERT INTO products (id, category_id, store_id, title, product_url) VALUES ($1, $2, $3, $4, $5)',
+            [productId, categoryId, storeId, product.title, product.productUrl]
         );
         return productId;
     }
 }
 
-async function upsertCurrentPrice(productId, product) {
+async function upsertCurrentPrice(productId, product, priceUpdatedDate) {
+    const retailAmount = product.retailPrice?.amount ?? null;
+    const retailUnitPrice = product.retailPrice?.unitPrice ?? null;
+    const discountAmount = product.discountPrice?.amount ?? null;
+    const discountUnitPrice = product.discountPrice?.unitPrice ?? null;
+    const loyaltyAmount = product.loyaltyPrice?.amount ?? null;
+    const loyaltyUnitPrice = product.loyaltyPrice?.unitPrice ?? null;
+    const discountPercentage = product.discountPrice.discount ?? null;
+    const loyaltyDiscountPercentage = product.loyaltyPrice.discount ?? null;
+    const unit = product.unit ?? null;
+
     await client.query(
-        'INSERT INTO current_prices (product_id, price, retail_price, discount, comparable_price, unit, date_updated) VALUES ($1, $2, $3, $4, $5, $6, NOW()) ' +
-        'ON CONFLICT (product_id) DO UPDATE SET price = $2, retail_price = $3, discount = $4, comparable_price = $5, unit = $6, date_updated = NOW()',
-        [productId, product.price, product.retailPrice, product.discount, product.unitPrice, product.unit]
+        'INSERT INTO current_extended_prices (product_id, retail_comparable_price, discount_comparable_price, loyalty_comparable_price, retail_price, discount_price, loyalty_price, discount_percentage, loyalty_discount_percentage, unit, date_updated) ' +
+        'VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ' +
+        'ON CONFLICT (product_id) DO UPDATE SET retail_comparable_price = $2, discount_comparable_price = $3, loyalty_comparable_price = $4, retail_price = $5, discount_price = $6, loyalty_price = $7, discount_percentage = $8, loyalty_discount_percentage = $9, unit = $10, date_updated = $11',
+        [
+            productId,
+            retailUnitPrice,
+            discountUnitPrice,
+            loyaltyUnitPrice,
+            retailAmount,
+            discountAmount,
+            loyaltyAmount,
+            discountPercentage,
+            loyaltyDiscountPercentage,
+            unit,
+            priceUpdatedDate
+        ]
     );
 }
 
 async function importProductsFromFile(filePath) {
     const data = fs.readFileSync(filePath);
-    const { categories, storeName } = JSON.parse(data);
+    const { dateTime, categories, storeName } = JSON.parse(data);
 
     console.log(`Importing data from file: ${filePath}`);
     console.log(`Store: ${storeName}`);
+    console.log(`Date Updated: ${dateTime}`);
 
     const storeId = await upsertStore(storeName);
     let importedCount = 0;
-    let skippedCount = 0;
 
     for (const [categoryName, products] of Object.entries(categories)) {
         const categoryId = await upsertCategory(categoryName);
 
         for (const product of products) {
-            const result = await client.query('SELECT id FROM products WHERE title = $1 AND store_id = $2', [product.title, storeId]);
-            if (result.rows.length > 0) {
-                skippedCount++;
-            } else {
-                const productId = uuidv4();
-                await client.query(
-                    'INSERT INTO products (id, category_id, store_id, title) VALUES ($1, $2, $3, $4)',
-                    [productId, categoryId, storeId, product.title]
-                );
-                await upsertCurrentPrice(productId, product);
-                importedCount++;
-            }
+            const productId = await upsertProduct(product, storeId, categoryId);
+            await upsertCurrentPrice(productId, product, dateTime);
+            importedCount++;
         }
     }
 
     console.log(`Import completed for file: ${filePath}`);
     console.log(`Number of items imported: ${importedCount}`);
-    console.log(`Number of items skipped: ${skippedCount}`);
 }
 
-async function importProducts() {
+async function main() {
     const outputDir = path.resolve(__dirname, process.env.OUTPUT_DIR);
     const files = fs.readdirSync(outputDir).filter(file => file.endsWith('.json'));
 
+    const { selectedFiles } = await inquirer.prompt([
+        {
+            type: 'checkbox',
+            name: 'selectedFiles',
+            message: 'Select the JSON files to import',
+            choices: files
+        }
+    ]);
+
     await client.connect();
 
-    for (const file of files) {
+    for (const file of selectedFiles) {
         const filePath = path.join(outputDir, file);
         console.log(`Processing file: ${filePath}`);
         await importProductsFromFile(filePath);
@@ -112,6 +140,6 @@ async function importProducts() {
     console.log('All imports completed.');
 }
 
-importProducts().catch(err => {
+main().catch(err => {
     console.error('Import failed:', err);
 });

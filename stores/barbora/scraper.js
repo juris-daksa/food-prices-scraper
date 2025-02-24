@@ -28,6 +28,8 @@ export async function extractProducts(page, baseUrl) {
                             retailUnitPrice = productInfo.promotion.oldComparativeRate ? Math.round(parseFloat(productInfo.promotion.oldComparativeRate) * 100) / 100 : retailUnitPrice;
                         } else if (productInfo.promotion.type === 'LOYALTY_PRICE') {
                             loyaltyDiscount = productInfo.promotion.percentage;
+                            discountUnitPrice = productInfo.comparative_unit_price ? Math.round(parseFloat(productInfo.comparative_unit_price) * 100) / 100 : null;
+
                         }
                     }
 
@@ -66,7 +68,6 @@ export async function extractProducts(page, baseUrl) {
 
     return products;
 }
-
 export async function getNextPageLink(page) {
     try {
         const nextPageLink = await page.evaluate(() => {
@@ -74,6 +75,16 @@ export async function getNextPageLink(page) {
             const nextPageElement = elements.find(element => element.textContent.includes('»'));
             return nextPageElement ? nextPageElement.href : null;
         });
+
+        if (nextPageLink) {
+            const currentPageUrl = new URL(page.url()).href;
+            const nextPageUrl = new URL(nextPageLink, currentPageUrl).href;
+
+            if (nextPageUrl === currentPageUrl) {
+                return null;
+            }
+        }
+
         return nextPageLink;
     } catch (error) {
         throw new Error(`Error getting next page link on page ${page.url()}: ${error.message}`);
