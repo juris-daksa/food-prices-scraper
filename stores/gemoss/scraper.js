@@ -4,6 +4,10 @@ export async function extractProducts(page, baseUrl) {
       const products = [];
       const productElements = document.querySelectorAll("li.item.product");
 
+      if (productElements.length === 0) {
+        throw new Error("No products found on the page.");
+      }
+
       productElements.forEach((product) => {
         const titleElement = product.querySelector("strong.product-item-name a");
         const oldPriceElement = product.querySelector("span.old-price .price-wrapper .price");
@@ -99,11 +103,4 @@ export async function extractProducts(page, baseUrl) {
       `Error extracting products on page ${page.url()}: ${error.message}`
     );
   }
-}
-
-export async function getNextPageLink(page) {
-    return await page.evaluate(() => {
-        const nextPageElement = document.querySelector("li.item.pages-item-next a");
-        return nextPageElement ? nextPageElement.href : null;
-    });
 }
