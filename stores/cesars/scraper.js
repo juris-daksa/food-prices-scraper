@@ -47,14 +47,11 @@ export async function extractProducts(page, baseUrl) {
         const volumeMatches = title.match(/(\d+(?:\.\d+)?)\s?(l|ml)\b/gi);
         const pieceMatch = title.match(/(\d+)\s?gab\./i);
 
-        if (weightMatches) {
-          unit = weightMatches.some(w => w.toLowerCase().includes("kg")) ? "kg" : "g";
-          unitSize = Math.max(...weightMatches.map(w => parseFloat(w.match(/\d+/)[0])));
-          if (unit === "g") {
-            unitSize /= 1000;
-            unit = "kg";
-          }
+        if (pieceMatch) {
+          unit = "gab."; 
+          unitSize = parseInt(pieceMatch[1]);
         }
+
 
         if (volumeMatches) {
           unit = volumeMatches.some(v => v.toLowerCase().includes("ml")) ? "ml" : "l";
@@ -65,9 +62,13 @@ export async function extractProducts(page, baseUrl) {
           }
         }
 
-        if (pieceMatch) {
-          unit = "gab."; 
-          unitSize = parseInt(pieceMatch[1]);
+        if (weightMatches) {
+          unit = weightMatches.some(w => w.toLowerCase().includes("kg")) ? "kg" : "g";
+          unitSize = Math.max(...weightMatches.map(w => parseFloat(w.match(/\d+/)[0])));
+          if (unit === "g") {
+            unitSize /= 1000;
+            unit = "kg";
+          }
         }
 
         let unitPrice = unitSize && retailPrice
