@@ -80,6 +80,7 @@ export async function extractProducts(page, baseUrl) {
 
         products.push({
           title,
+          unit,
           retailPrice: {
             amount: retailPrice,
             unitPrice: unitPrice,
