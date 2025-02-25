@@ -104,3 +104,10 @@ export async function extractProducts(page, baseUrl) {
     );
   }
 }
+
+export async function getNextPageLink(page) {
+    return await page.evaluate(() => {
+        const nextPageElement = document.querySelector("li.item.pages-item-next a");
+        return nextPageElement ? nextPageElement.href : null;
+    });
+}
