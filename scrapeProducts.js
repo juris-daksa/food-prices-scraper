@@ -66,10 +66,6 @@ export async function scrapeProducts() {
 
     const brdConfig = process.env.BRD_CONFIG;
 
-    if (!brdConfig) {
-        return { success: false, message: 'Missing BRD_CONFIG in .env file' };
-    }
-
     try {
         const storeConfigs = await loadStoreConfigs();
         const store = await selectStore(storeConfigs);
@@ -97,10 +93,11 @@ export async function scrapeProducts() {
             let retryCount = 0;
             const maxRetries = 3;
             let success = false;
+            let useBrightData = false;
 
-            while (retryCount < maxRetries && !success) {
+            while (retryCount < maxRetries) {
                 try {
-                    ({ browser, page } = await resetSession(brdConfig, absoluteLink));
+                    ({ browser, page } = await resetSession(useBrightData ? brdConfig : null, absoluteLink));
 
                     const products = await extractProducts(page);
                     allProducts[category] = allProducts[category].concat(products);
@@ -137,11 +134,19 @@ export async function scrapeProducts() {
                         break;
                     }
                 } catch (error) {
-                    retryCount++;
-                    console.error(`❌ Error during scraping attempt ${retryCount}/${maxRetries} at ".../${absoluteLink.split('/').pop()}": `, error);
+                    console.error(`❌ Error during scraping attempt ${retryCount + 1}/${maxRetries} at ".../${absoluteLink.split('/').pop()}": `, error);
+
+                    if ((error.message.includes('403') || error.message.includes('429')) && !useBrightData) {
+                        console.log('Switching to Bright Data proxy due to access restrictions...');
+                        useBrightData = true;
+                        retryCount = 0; // Reset retries since we're switching proxies
+                    } else {
+                        retryCount++;
+                    }
+
                     if (retryCount >= maxRetries) {
-                        console.error('Max retry limit reached. Exiting scraper.');
-                        process.exit(1);
+                        console.error('Max retry limit reached for this category, moving to next.');
+                        break;
                     }
                 } finally {
                     await browser?.close();
