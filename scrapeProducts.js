@@ -139,7 +139,7 @@ export async function scrapeProducts() {
                     if ((error.message.includes('403') || error.message.includes('429')) && !useBrightData) {
                         console.log('Switching to Bright Data proxy due to access restrictions...');
                         useBrightData = true;
-                        retryCount = 0; // Reset retries since we're switching proxies
+                        retryCount = 0;
                     } else {
                         retryCount++;
                     }

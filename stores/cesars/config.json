@@ -1,0 +1,69 @@
+{
+  "baseUrl": "https://www.cesars.lv",
+  "categories": [
+    {
+      "relativeLink": "/lv/produkti/kategorija/merces-un-pastas",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/risi-un-citi-graudaugi",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/nudeles-un-risu-papirs",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/milti-un-miltu-izstradajumi",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/juras-alges",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/etiki-un-ellas",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/kalteti-marineti-un-konserveti-produkti",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/paksaugi",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/sojas-produkti",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/kokosriekstu-pieni-un-kremi",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/garsvielas-seklas-un-buljoni",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/atri-pagatavojamie-edieni",
+      "category": "Iepakotā pārtika"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/uzkodas-un-deserti",
+      "category": "Saldumi un uzkodas"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/dzerieni-sulas-un-tejas",
+      "category": "Dzērieni"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/alus",
+      "category": "Dzērieni"
+    },
+    {
+      "relativeLink": "/lv/produkti/kategorija/saldetie-produkti",
+      "category": "Saldētie ēdieni"
+    }
+  ]
+}
