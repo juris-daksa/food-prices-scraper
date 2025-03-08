@@ -22,17 +22,6 @@ CREATE TABLE IF NOT EXISTS products (
     FOREIGN KEY (store_id) REFERENCES stores(id)
 );
 
-CREATE TABLE IF NOT EXISTS current_prices (
-    product_id UUID PRIMARY KEY,
-    price NUMERIC(10, 2),
-    retail_price NUMERIC(10, 2),
-    discount INT,
-    comparable_price NUMERIC(10, 2),
-    unit VARCHAR(50),
-    date_updated DATE,
-    FOREIGN KEY (product_id) REFERENCES products(id)
-);
-
 CREATE TABLE IF NOT EXISTS historical_prices (
     product_id UUID,
     date DATE,
