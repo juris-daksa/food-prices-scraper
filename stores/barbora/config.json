@@ -22,12 +22,16 @@
             "category": "Saldētie ēdieni"
         },
         {
-            "relativeLink": "/bakaleja",
-            "category": "Iepakotā pārtika"
+            "relativeLink": "/bakaleja/saldumi",
+            "category": "Saldumi un uzkodas"
         },
         {
-            "relativeLink": "/saldumi-un-uzkodas",
+            "relativeLink": "/bakaleja/uzkodas",
             "category": "Saldumi un uzkodas"
+        },
+        {
+            "relativeLink": "/bakaleja",
+            "category": "Iepakotā pārtika"
         },
         {
             "relativeLink": "/dzerieni/alus-sidri-un-kokteili",
