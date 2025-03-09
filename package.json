@@ -26,6 +26,7 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "inquirer": "^12.3.3",
+    "node-cron": "^3.0.3",
     "puppeteer": "^24.1.1"
   }
 }
