@@ -1,11 +1,12 @@
 import { scrapeProducts } from './scrapeProducts.js';
+import { importScrapedData, interactiveImport } from './dbImport/importData.js';
 import cron from 'node-cron';
 
 const mode = process.argv[2] || 'interactive';
 
 const scheduledTimes = [
   '00 8 * * *', // 8:00
-  '10 17 * * *' // 17:10
+  '30 18 * * *' // 18:30
 ];
 
 const getNextRunTime = () => {
@@ -20,12 +21,15 @@ const getNextRunTime = () => {
   return nextRuns.sort((a, b) => a - b)[0];
 };
 
-const handleResult = (result) => {
+const handleResult = async (result) => {
   if (result.success) {
     console.log('Scraping completed.');
     if (mode === 'auto') {
+      await importScrapedData(result.jsonFilePaths);
       const nextRunTime = getNextRunTime();
       console.log(`Next scheduled scraping will happen at: ${nextRunTime}`);
+    } else {
+      await interactiveImport();
     }
   } else {
     console.error('Scraping failed:', result.message);

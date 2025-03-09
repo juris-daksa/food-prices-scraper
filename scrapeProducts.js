@@ -69,6 +69,7 @@ export async function scrapeProducts(mode) {
     const storeConfigs = await loadStoreConfigs();
     let stores;
     let selectedCategories;
+    let jsonFilePaths = [];
 
     if (mode === 'auto') {
       stores = Object.keys(storeConfigs);
@@ -175,13 +176,14 @@ export async function scrapeProducts(mode) {
         const finalOutputPath = resolve(__dirname, 'output', finalFileName);
         fs.mkdirSync(resolve(__dirname, 'output'), { recursive: true });
         fs.writeFileSync(finalOutputPath, JSON.stringify(finalOutput, null, 2));
+        jsonFilePaths.push(finalOutputPath);
         console.log('Saved final output:', finalFileName);
       } catch (error) {
         console.error(`❌ Error scraping ${store}:`, error);
       }
     }
 
-    return { success: true };
+    return { success: true, jsonFilePaths }; 
   } catch (error) {
     return { success: false, message: error.message };
   }
