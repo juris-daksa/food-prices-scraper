@@ -45,6 +45,7 @@ export async function scrapeProducts(mode) {
           let absoluteLink = new URL(relativeLink, storeConfig.baseUrl).href;
           console.log(`Navigating to: ${absoluteLink}`);
 
+          let success = false;
           let retryCount = 0;
           const maxRetries = 3;
           let useBrightData = false;
